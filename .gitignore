@@ -91,3 +91,10 @@ jspm_packages/
 
 # DynamoDB Local files
 .dynamodb/
+
+# Large video files (store locally)
+*.mp4
+*.avi
+*.mov
+*.wmv
+demo/frontend/public/video/
