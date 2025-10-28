@@ -12,7 +12,9 @@ const LandingPage = () => {
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentVideo, setCurrentVideo] = useState(0)
-  const videos = ['/video/csk.mp4', '/video/mi.mp4', '/video/rcb.mp4']
+  const [videoLoaded, setVideoLoaded] = useState(false)
+  const videos = ['/video/csk.mp4', '/video/mi.mp4']
+
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -174,25 +176,38 @@ const LandingPage = () => {
               </div>
             </motion.div>
 
-            {/* Right Content - Video */}
+            {/* Right Content - Optimized Video */}
             <motion.div 
               className="hidden lg:block -mt-12"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <video 
-                key={currentVideo}
-                className="w-full h-auto rounded-2xl shadow-2xl max-w-4xl cursor-pointer"
-                autoPlay 
-                muted 
-                playsInline
-                onClick={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
-                onEnded={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
-              >
-                <source src={videos[currentVideo]} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+              <div className="relative w-full h-auto rounded-2xl shadow-2xl max-w-4xl overflow-hidden">
+                {!videoLoaded ? (
+                  <div className="aspect-video bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center cursor-pointer" onClick={() => setVideoLoaded(true)}>
+                    <div className="text-center text-white">
+                      <Play className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
+                      <h3 className="text-2xl font-bold mb-2">IPL Highlights</h3>
+                      <p className="text-lg text-blue-100">Click to watch team videos</p>
+                    </div>
+                  </div>
+                ) : (
+                  <video 
+                    key={currentVideo}
+                    className="w-full aspect-video cursor-pointer"
+                    muted 
+                    playsInline
+                    preload="metadata"
+                    autoPlay
+                    onClick={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
+                    onEnded={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
+                    onError={() => setVideoLoaded(false)}
+                  >
+                    <source src={videos[currentVideo]} type="video/mp4" />
+                  </video>
+                )}
+              </div>
             </motion.div>
           </div>
         </div>
