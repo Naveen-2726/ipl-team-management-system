@@ -20,6 +20,7 @@ const Navbar = () => {
     { name: 'Teams', href: '/teams' },
     { name: 'Players', href: '/players' },
     { name: 'Matches', href: '/matches' },
+    { name: 'Videos', href: '/videos' },
     { name: 'Analytics', href: '/analytics' },
   ]
 
@@ -29,6 +30,7 @@ const Navbar = () => {
     { name: 'Players', href: '/players' },
     { name: 'Squads', href: '/squads' },
     { name: 'Matches', href: '/matches' },
+    { name: 'Videos', href: '/videos' },
     { name: 'Analytics', href: '/analytics' },
     { name: 'Evaluations', href: '/evaluations' },
   ]
@@ -39,6 +41,7 @@ const Navbar = () => {
     { name: 'Players', href: '/admin/players' },
     { name: 'Squads', href: '/squads' },
     { name: 'Matches', href: '/admin/matches' },
+    { name: 'Videos', href: '/videos' },
     { name: 'Analytics', href: '/analytics' },
     { name: 'Evaluations', href: '/evaluations' },
   ]
