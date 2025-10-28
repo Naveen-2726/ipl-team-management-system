@@ -39,6 +39,7 @@ const Navbar = () => {
     { name: 'Players', href: '/admin/players' },
     { name: 'Squads', href: '/squads' },
     { name: 'Matches', href: '/admin/matches' },
+    { name: 'Videos', href: '/videos' },
     { name: 'Analytics', href: '/analytics' },
     { name: 'Evaluations', href: '/evaluations' },
   ]

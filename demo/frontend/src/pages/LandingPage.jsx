@@ -11,6 +11,8 @@ const LandingPage = () => {
   const navigate = useNavigate()
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
+  const [currentVideo, setCurrentVideo] = useState(0)
+  const videos = ['/video/csk.mp4', '/video/mi.mp4', '/video/rcb.mp4']
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -157,7 +159,7 @@ const LandingPage = () => {
               </div>
             </motion.div>
 
-            {/* Right Content - Video Preview */}
+            {/* Right Content - Video */}
             <motion.div 
               className="hidden lg:block -mt-12"
               initial={{ opacity: 0, x: 50 }}
@@ -165,37 +167,15 @@ const LandingPage = () => {
               transition={{ duration: 0.8, delay: 0.3 }}
             >
               <video 
-                id="heroVideo"
-                className="w-full h-auto rounded-2xl shadow-2xl cursor-pointer max-w-4xl"
+                key={currentVideo}
+                className="w-full h-auto rounded-2xl shadow-2xl max-w-4xl cursor-pointer"
                 autoPlay 
                 muted 
                 playsInline
-                onClick={() => {
-                  const video = document.getElementById('heroVideo');
-                  const currentSrc = video.currentSrc;
-                  if (currentSrc.includes('csk.mp4')) {
-                    video.src = '/video/mi.mp4';
-                  } else if (currentSrc.includes('mi.mp4')) {
-                    video.src = '/video/rcb.mp4';
-                  } else {
-                    video.src = '/video/csk.mp4';
-                  }
-                  video.load();
-                }}
-                onEnded={() => {
-                  const video = document.getElementById('heroVideo');
-                  const currentSrc = video.currentSrc;
-                  if (currentSrc.includes('csk.mp4')) {
-                    video.src = '/video/mi.mp4';
-                  } else if (currentSrc.includes('mi.mp4')) {
-                    video.src = '/video/rcb.mp4';
-                  } else {
-                    video.src = '/video/csk.mp4';
-                  }
-                  video.load();
-                }}
+                onClick={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
+                onEnded={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
               >
-                <source src="/video/csk.mp4" type="video/mp4" />
+                <source src={videos[currentVideo]} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </motion.div>
