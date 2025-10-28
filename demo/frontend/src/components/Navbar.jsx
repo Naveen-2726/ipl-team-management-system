@@ -20,7 +20,6 @@ const Navbar = () => {
     { name: 'Teams', href: '/teams' },
     { name: 'Players', href: '/players' },
     { name: 'Matches', href: '/matches' },
-    { name: 'Videos', href: '/videos' },
     { name: 'Analytics', href: '/analytics' },
   ]
 
@@ -30,7 +29,6 @@ const Navbar = () => {
     { name: 'Players', href: '/players' },
     { name: 'Squads', href: '/squads' },
     { name: 'Matches', href: '/matches' },
-    { name: 'Videos', href: '/videos' },
     { name: 'Analytics', href: '/analytics' },
     { name: 'Evaluations', href: '/evaluations' },
   ]
@@ -41,7 +39,6 @@ const Navbar = () => {
     { name: 'Players', href: '/admin/players' },
     { name: 'Squads', href: '/squads' },
     { name: 'Matches', href: '/admin/matches' },
-    { name: 'Videos', href: '/videos' },
     { name: 'Analytics', href: '/analytics' },
     { name: 'Evaluations', href: '/evaluations' },
   ]
@@ -66,14 +63,14 @@ const Navbar = () => {
 
   return (
     <nav className="bg-gradient-to-r from-blue-900 via-blue-800 to-purple-900 shadow-xl sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           
           {/* IPL Logo and Branding */}
           <div className="flex items-center cursor-pointer group" onClick={() => navigate('/')}>
-            <img src="/logos/ipl%20logo.png" alt="IPL" className="w-12 h-12 mr-3 rounded-lg" />
+            <img src="/logos/ipl%20logo.png" alt="IPL" className="w-10 h-10 mr-2 rounded-lg" />
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-wide">
+              <h1 className="text-xl font-bold text-white tracking-wide">
                 IPL
               </h1>
               <p className="text-xs text-blue-200 font-medium tracking-wider uppercase">
@@ -83,15 +80,15 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-3">
             {getNavigation().map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`px-6 py-3 rounded-xl font-semibold text-base transition-all duration-300 ${
+                className={`px-5 py-3 rounded-lg font-medium text-base transition-all duration-300 whitespace-nowrap ${
                   isActive(item.href) 
-                    ? 'bg-white text-blue-900 shadow-xl transform scale-105' 
-                    : 'text-blue-100 hover:text-white hover:bg-white/20 hover:scale-105'
+                    ? 'bg-white text-blue-900 shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-white/20'
                 }`}
               >
                 {item.name}
@@ -100,10 +97,10 @@ const Navbar = () => {
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             {user ? (
-              <div className="flex items-center space-x-3">
-                <span className="text-blue-100 font-semibold hidden sm:block text-base">
+              <div className="flex items-center space-x-2">
+                <span className="text-blue-100 font-medium hidden sm:block text-base">
                   Welcome, {user.username}
                 </span>
                 <div className="relative">
@@ -145,13 +142,13 @@ const Navbar = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/login"
-                  className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-xl font-bold text-base transition-all duration-300 border border-white/30 backdrop-blur-sm hover:scale-105"
+                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-3 rounded-lg font-medium text-base transition-all duration-300 border border-white/30 backdrop-blur-sm"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-4 rounded-xl font-bold text-base transition-all duration-300 shadow-xl transform hover:scale-105"
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-5 py-3 rounded-lg font-medium text-base transition-all duration-300 shadow-lg"
                 >
                   Create Account
                 </Link>

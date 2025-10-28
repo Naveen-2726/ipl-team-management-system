@@ -9,17 +9,18 @@ import {
 import apiService from '../services/apiService'
 import { TeamLogo, TeamBadge } from '../utils/logoUtils'
 import EnhancedLoadingScreen from '../components/EnhancedLoadingScreen'
-import { ipl2025Teams, ipl2025Players } from '../data/iplData2025'
 
 
 const Dashboard = () => {
   const { user } = useAuth()
   const [stats, setStats] = useState({
-    teams: ipl2025Teams.length,
-    players: ipl2025Players.length,
-    totalRuns: ipl2025Players.reduce((sum, p) => sum + (p.runsScored || 0), 0),
-    totalWickets: ipl2025Players.reduce((sum, p) => sum + (p.wicketsTaken || 0), 0)
+    teams: 0,
+    players: 0,
+    totalRuns: 0,
+    totalWickets: 0
   })
+  const [teams, setTeams] = useState([])
+  const [players, setPlayers] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,19 +29,35 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [teamsData, playersData] = await Promise.all([
-        apiService.getTeams(),
-        apiService.getPlayers()
+      const [teamsResponse, playersResponse] = await Promise.all([
+        apiService.getTeams(0, 100),
+        apiService.getPlayers(0, 500)
       ])
       
+      const teamsData = teamsResponse.content || teamsResponse.data || teamsResponse || []
+      const playersData = playersResponse.content || playersResponse.data || playersResponse || []
+      
+      setTeams(Array.isArray(teamsData) ? teamsData : [])
+      setPlayers(Array.isArray(playersData) ? playersData : [])
+      
+      const totalRuns = playersData.reduce((sum, p) => sum + (p.runsScored || p.runs || 0), 0)
+      const totalWickets = playersData.reduce((sum, p) => sum + (p.wicketsTaken || p.wickets || 0), 0)
+      
       setStats({
-        teams: teamsData.content?.length || 10,
-        players: playersData.content?.length || 200,
-        matches: 45,
-        analytics: 1200
+        teams: teamsData.length || 0,
+        players: playersData.length || 0,
+        totalRuns,
+        totalWickets
       })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
+      // Fallback to default values
+      setStats({
+        teams: 10,
+        players: 0,
+        totalRuns: 0,
+        totalWickets: 0
+      })
     } finally {
       setLoading(false)
     }
@@ -142,16 +159,16 @@ const Dashboard = () => {
     }
   ]
 
-  const topPerformers = ipl2025Players
-    .sort((a, b) => (b.runsScored || 0) - (a.runsScored || 0))
+  const topPerformers = players
+    .sort((a, b) => (b.runsScored || b.runs || 0) - (a.runsScored || a.runs || 0))
     .slice(0, 5)
     .map(player => {
-      const team = ipl2025Teams.find(t => t.id === player.teamId)
+      const team = teams.find(t => t.id === player.teamId || t.teamName === player.teamName)
       return {
-        name: player.playerName,
-        team: team?.shortName || 'Unknown',
-        runs: (player.runsScored || 0).toLocaleString(),
-        average: (player.battingAverage || 0).toFixed(1)
+        name: player.playerName || player.name,
+        team: team?.shortName || team?.teamName?.substring(0, 3) || 'N/A',
+        runs: (player.runsScored || player.runs || 0).toLocaleString(),
+        average: (player.battingAverage || player.average || 0).toFixed(1)
       }
     })
 
@@ -272,7 +289,7 @@ const Dashboard = () => {
                 <Star className="w-5 h-5 text-yellow-500" />
               </div>
               <div className="space-y-4">
-                {topPerformers.map((player, index) => (
+                {topPerformers.length > 0 ? topPerformers.map((player, index) => (
                   <div key={player.name} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
                       {index + 1}
@@ -286,7 +303,13 @@ const Dashboard = () => {
                       <p className="text-sm text-gray-600">Avg: {player.average}</p>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No players added yet</p>
+                    <p className="text-sm">Admin can add players to see them here</p>
+                  </div>
+                )}
               </div>
               <Link
                 to="/players"

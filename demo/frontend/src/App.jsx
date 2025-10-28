@@ -25,7 +25,6 @@ import Analytics from './pages/Analytics'
 import Squads from './pages/Squads'
 import Evaluations from './pages/Evaluations'
 import EvaluationDetail from './pages/EvaluationDetail'
-import Videos from './pages/Videos'
 import AuditLogs from './pages/AuditLogs'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminTeams from './pages/admin/AdminTeams'
@@ -83,7 +82,6 @@ function AppContent() {
               <Route path="/matches" element={<Matches />} />
               <Route path="/matches/:id" element={<MatchDetail />} />
               <Route path="/points-table" element={<PointsTable />} />
-              <Route path="/videos" element={<Videos />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/squads" element={<Squads />} />
               <Route path="/evaluations" element={<Evaluations />} />

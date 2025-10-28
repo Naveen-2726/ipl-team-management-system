@@ -26,47 +26,22 @@ const Players = () => {
       try {
         setLoading(true)
         console.log('Fetching players from API...')
-        const response = await apiService.getPlayers()
+        const response = await apiService.getPlayers(0, 500) // Fetch more players
         console.log('Players API response:', response)
         
-        // Handle paginated response
-        const playersData = response.content || response.data || response
-        if (Array.isArray(playersData) && playersData.length > 0) {
-          console.log('Players data from API:', playersData)
+        // Handle different response formats
+        const playersData = response.content || response.data || response || []
+        console.log('Players data from API:', playersData)
+        
+        if (Array.isArray(playersData)) {
           setPlayers(playersData)
         } else {
-          console.log('No players in database, using fallback data')
-          // Use fallback data since database has no players
-          const fallbackPlayers = [
-            { id: 1, playerName: 'MS Dhoni', age: 42, nationality: 'India', role: 'Wicket Keeper', team: { teamName: 'CSK' }, jerseyNumber: 7, matchesPlayed: 264, runsScored: 5082, battingAverage: 39.42, strikeRate: 135.92, highestScore: 84 },
-            { id: 2, playerName: 'Virat Kohli', age: 35, nationality: 'India', role: 'Batsman', team: { teamName: 'RCB' }, jerseyNumber: 18, matchesPlayed: 237, runsScored: 7263, battingAverage: 36.51, strikeRate: 130.41, highestScore: 113 },
-            { id: 3, playerName: 'Rohit Sharma', age: 37, nationality: 'India', role: 'Batsman', team: { teamName: 'MI' }, jerseyNumber: 45, matchesPlayed: 257, runsScored: 6628, battingAverage: 30.34, strikeRate: 130.61, highestScore: 109 },
-            { id: 4, playerName: 'Jasprit Bumrah', age: 30, nationality: 'India', role: 'Bowler', team: { teamName: 'MI' }, jerseyNumber: 93, matchesPlayed: 133, runsScored: 70, wicketsTaken: 165, bowlingAverage: 24.43, economyRate: 7.39 },
-            { id: 5, playerName: 'Andre Russell', age: 36, nationality: 'West Indies', role: 'All Rounder', team: { teamName: 'KKR' }, jerseyNumber: 12, matchesPlayed: 140, runsScored: 2556, wicketsTaken: 73, battingAverage: 29.03, strikeRate: 179.81 },
-            { id: 6, playerName: 'Shikhar Dhawan', age: 38, nationality: 'India', role: 'Batsman', team: { teamName: 'PBKS' }, jerseyNumber: 25, matchesPlayed: 206, runsScored: 6244, battingAverage: 34.84, strikeRate: 126.64, highestScore: 106 },
-            { id: 7, playerName: 'Sanju Samson', age: 29, nationality: 'India', role: 'Wicket Keeper', team: { teamName: 'RR' }, jerseyNumber: 9, matchesPlayed: 154, runsScored: 3397, battingAverage: 27.62, strikeRate: 136.32, highestScore: 119 },
-            { id: 8, playerName: 'Aiden Markram', age: 30, nationality: 'South Africa', role: 'Batsman', team: { teamName: 'SRH' }, jerseyNumber: 31, matchesPlayed: 80, runsScored: 2194, battingAverage: 32.25, strikeRate: 142.89, highestScore: 83 },
-            { id: 9, playerName: 'Hardik Pandya', age: 31, nationality: 'India', role: 'All Rounder', team: { teamName: 'GT' }, jerseyNumber: 33, matchesPlayed: 148, runsScored: 3423, wicketsTaken: 42, battingAverage: 28.86, strikeRate: 143.89 },
-            { id: 10, playerName: 'KL Rahul', age: 32, nationality: 'India', role: 'Wicket Keeper', team: { teamName: 'LSG' }, jerseyNumber: 1, matchesPlayed: 132, runsScored: 4683, battingAverage: 45.55, strikeRate: 134.62, highestScore: 132 }
-          ]
-          setPlayers(fallbackPlayers)
+          console.log('Invalid players data format')
+          setPlayers([])
         }
       } catch (error) {
         console.error('Error fetching players:', error)
-        // Fallback data on API error
-        const fallbackPlayers = [
-          { id: 1, playerName: 'MS Dhoni', age: 42, nationality: 'India', role: 'Wicket Keeper', team: { teamName: 'CSK' }, jerseyNumber: 7, matchesPlayed: 264, runsScored: 5082, battingAverage: 39.42, strikeRate: 135.92, highestScore: 84 },
-          { id: 2, playerName: 'Virat Kohli', age: 35, nationality: 'India', role: 'Batsman', team: { teamName: 'RCB' }, jerseyNumber: 18, matchesPlayed: 237, runsScored: 7263, battingAverage: 36.51, strikeRate: 130.41, highestScore: 113 },
-          { id: 3, playerName: 'Rohit Sharma', age: 37, nationality: 'India', role: 'Batsman', team: { teamName: 'MI' }, jerseyNumber: 45, matchesPlayed: 257, runsScored: 6628, battingAverage: 30.34, strikeRate: 130.61, highestScore: 109 },
-          { id: 4, playerName: 'Jasprit Bumrah', age: 30, nationality: 'India', role: 'Bowler', team: { teamName: 'MI' }, jerseyNumber: 93, matchesPlayed: 133, runsScored: 70, wicketsTaken: 165, bowlingAverage: 24.43, economyRate: 7.39 },
-          { id: 5, playerName: 'Andre Russell', age: 36, nationality: 'West Indies', role: 'All Rounder', team: { teamName: 'KKR' }, jerseyNumber: 12, matchesPlayed: 140, runsScored: 2556, wicketsTaken: 73, battingAverage: 29.03, strikeRate: 179.81 },
-          { id: 6, playerName: 'Shikhar Dhawan', age: 38, nationality: 'India', role: 'Batsman', team: { teamName: 'PBKS' }, jerseyNumber: 25, matchesPlayed: 206, runsScored: 6244, battingAverage: 34.84, strikeRate: 126.64, highestScore: 106 },
-          { id: 7, playerName: 'Sanju Samson', age: 29, nationality: 'India', role: 'Wicket Keeper', team: { teamName: 'RR' }, jerseyNumber: 9, matchesPlayed: 154, runsScored: 3397, battingAverage: 27.62, strikeRate: 136.32, highestScore: 119 },
-          { id: 8, playerName: 'Aiden Markram', age: 30, nationality: 'South Africa', role: 'Batsman', team: { teamName: 'SRH' }, jerseyNumber: 31, matchesPlayed: 80, runsScored: 2194, battingAverage: 32.25, strikeRate: 142.89, highestScore: 83 },
-          { id: 9, playerName: 'Hardik Pandya', age: 31, nationality: 'India', role: 'All Rounder', team: { teamName: 'GT' }, jerseyNumber: 33, matchesPlayed: 148, runsScored: 3423, wicketsTaken: 42, battingAverage: 28.86, strikeRate: 143.89 },
-          { id: 10, playerName: 'KL Rahul', age: 32, nationality: 'India', role: 'Wicket Keeper', team: { teamName: 'LSG' }, jerseyNumber: 1, matchesPlayed: 132, runsScored: 4683, battingAverage: 45.55, strikeRate: 134.62, highestScore: 132 }
-        ]
-        setPlayers(fallbackPlayers)
+        setPlayers([])
       } finally {
         setLoading(false)
       }
@@ -225,7 +200,7 @@ const Players = () => {
 
         {/* Players Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          {paginatedData.map((player, index) => (
+          {paginatedData.length > 0 ? paginatedData.map((player, index) => (
             <motion.div
               key={player.id}
               initial={{ opacity: 0, y: 50 }}
@@ -301,7 +276,24 @@ const Players = () => {
                 </div>
               </Link>
             </motion.div>
-          ))}
+          )) : (
+            <div className="col-span-full text-center py-16">
+              <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">No Players Found</h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm || selectedRole !== 'All' || selectedTeam !== 'All' 
+                  ? 'No players match your current filters. Try adjusting your search criteria.'
+                  : 'No players have been added yet. Admin can add players to see them here.'}
+              </p>
+              {(!searchTerm && selectedRole === 'All' && selectedTeam === 'All') && (
+                <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-blue-700 text-sm">
+                    💡 <strong>Admin:</strong> Use the admin panel to add new players to the system.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Pagination */}

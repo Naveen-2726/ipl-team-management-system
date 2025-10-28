@@ -18,18 +18,33 @@ const LandingPage = () => {
     const fetchTeams = async () => {
       try {
         setLoading(true)
-        const response = await apiService.getTeams()
+        const response = await apiService.getTeams(0, 100)
         const teamsData = response.content || response.data || response
-        if (Array.isArray(teamsData)) {
+        if (Array.isArray(teamsData) && teamsData.length > 0) {
           const teamsWithShortNames = teamsData.map(team => ({
             ...team,
             shortName: team.shortName || getTeamShortName(team.teamName)
           }))
           setTeams(teamsWithShortNames)
         } else {
-          setTeams([])
+          // Use fallback teams if no teams in database
+          const fallbackTeams = [
+            { id: 1, teamName: 'Chennai Super Kings', shortName: 'CSK', titles: 5, founded: 2008 },
+            { id: 2, teamName: 'Mumbai Indians', shortName: 'MI', titles: 5, founded: 2008 },
+            { id: 3, teamName: 'Royal Challengers Bangalore', shortName: 'RCB', titles: 0, founded: 2008 },
+            { id: 4, teamName: 'Kolkata Knight Riders', shortName: 'KKR', titles: 2, founded: 2008 },
+            { id: 5, teamName: 'Delhi Capitals', shortName: 'DC', titles: 0, founded: 2008 },
+            { id: 6, teamName: 'Punjab Kings', shortName: 'PBKS', titles: 0, founded: 2008 },
+            { id: 7, teamName: 'Rajasthan Royals', shortName: 'RR', titles: 1, founded: 2008 },
+            { id: 8, teamName: 'Sunrisers Hyderabad', shortName: 'SRH', titles: 1, founded: 2013 },
+            { id: 9, teamName: 'Gujarat Titans', shortName: 'GT', titles: 1, founded: 2022 },
+            { id: 10, teamName: 'Lucknow Super Giants', shortName: 'LSG', titles: 0, founded: 2022 }
+          ]
+          setTeams(fallbackTeams)
         }
       } catch (error) {
+        console.error('Error fetching teams:', error)
+        // Use fallback teams on error
         const fallbackTeams = [
           { id: 1, teamName: 'Chennai Super Kings', shortName: 'CSK', titles: 5, founded: 2008 },
           { id: 2, teamName: 'Mumbai Indians', shortName: 'MI', titles: 5, founded: 2008 },
@@ -136,7 +151,7 @@ const LandingPage = () => {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-8">
                 {[
-                  { value: 10, label: 'IPL Teams', icon: Trophy, color: 'orange' },
+                  { value: teams.length || 10, label: 'IPL Teams', icon: Trophy, color: 'orange' },
                   { value: 250, label: 'Players (2024)', icon: Users, color: 'blue' },
                   { value: 74, label: 'Matches/Season', icon: Calendar, color: 'purple' }
                 ].map((stat, index) => (
@@ -151,7 +166,7 @@ const LandingPage = () => {
                       <stat.icon className="w-8 h-8 text-orange-400" />
                     </div>
                     <div className="text-3xl font-black text-white mb-2">
-                      <AnimatedCounter end={stat.value} suffix={stat.value === 250 ? '+' : ''} />
+                      <AnimatedCounter end={stat.value} suffix={stat.label.includes('Players') ? '+' : ''} />
                     </div>
                     <div className="text-blue-200 text-base font-medium">{stat.label}</div>
                   </motion.div>
