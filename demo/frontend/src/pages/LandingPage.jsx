@@ -11,9 +11,21 @@ const LandingPage = () => {
   const navigate = useNavigate()
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
-  const [currentVideo, setCurrentVideo] = useState(0)
-  const [videoLoaded, setVideoLoaded] = useState(false)
-  const videos = ['/video/csk.mp4', '/video/mi.mp4']
+  const [currentImage, setCurrentImage] = useState(0)
+  
+  const images = [
+    { src: '/logos/csk.png', team: 'Chennai Super Kings', color: 'from-yellow-400 to-orange-500' },
+    { src: '/logos/mi.jpeg', team: 'Mumbai Indians', color: 'from-blue-400 to-blue-600' },
+    { src: '/logos/rcb.jpeg', team: 'Royal Challengers Bangalore', color: 'from-red-400 to-red-600' },
+    { src: '/logos/ipl%20logo.png', team: 'IPL Championship', color: 'from-purple-400 to-indigo-600' }
+  ]
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % images.length)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
 
 
   useEffect(() => {
@@ -176,37 +188,22 @@ const LandingPage = () => {
               </div>
             </motion.div>
 
-            {/* Right Content - Optimized Video */}
+            {/* Right Content - Enhanced Visual */}
             <motion.div 
               className="hidden lg:block -mt-12"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <div className="relative w-full h-auto rounded-2xl shadow-2xl max-w-4xl overflow-hidden">
-                {!videoLoaded ? (
-                  <div className="aspect-video bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center cursor-pointer" onClick={() => setVideoLoaded(true)}>
-                    <div className="text-center text-white">
-                      <Play className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-                      <h3 className="text-2xl font-bold mb-2">IPL Highlights</h3>
-                      <p className="text-lg text-blue-100">Click to watch team videos</p>
-                    </div>
-                  </div>
-                ) : (
-                  <video 
-                    key={currentVideo}
-                    className="w-full aspect-video cursor-pointer"
-                    muted 
-                    playsInline
-                    preload="metadata"
-                    autoPlay
-                    onClick={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
-                    onEnded={() => setCurrentVideo((prev) => (prev + 1) % videos.length)}
-                    onError={() => setVideoLoaded(false)}
-                  >
-                    <source src={videos[currentVideo]} type="video/mp4" />
-                  </video>
-                )}
+              <div className="relative max-w-2xl mx-auto">
+                {/* Main Card */}
+                <img 
+                  src="/images/captains.avif" 
+                  alt="IPL Team Captains" 
+                  className="w-full h-full object-cover rounded-2xl"
+                />
+                
+
               </div>
             </motion.div>
           </div>
@@ -388,21 +385,26 @@ const LandingPage = () => {
                 return (
                 <motion.div
                   key={team.id}
-                  className={`${getTeamColor(shortName)} p-6 rounded-xl text-center cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group`}
+                  className={`${getTeamColor(shortName)} p-6 rounded-xl text-center cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group relative overflow-hidden`}
                   onClick={() => navigate('/teams')}
                   title={team.teamName}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <TeamLogo 
-                    teamName={shortName} 
-                    size="w-12 h-12" 
-                    className="mx-auto mb-3 p-1"
-                    removeBorder={true}
-                  />
-                  <div className="text-white font-bold text-lg">{shortName}</div>
-                  <div className="text-white/80 text-xs mt-1 truncate">{team.teamName}</div>
+
+                  
+                  {/* Content */}
+                  <div className="relative z-10">
+                    <TeamLogo 
+                      teamName={shortName} 
+                      size="w-12 h-12" 
+                      className="mx-auto mb-3 p-1"
+                      removeBorder={true}
+                    />
+                    <div className="text-white font-bold text-lg">{shortName}</div>
+                    <div className="text-white/80 text-xs mt-1 truncate">{team.teamName}</div>
+                  </div>
                 </motion.div>
                 )
               })

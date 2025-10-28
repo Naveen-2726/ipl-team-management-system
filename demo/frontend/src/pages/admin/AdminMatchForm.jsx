@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Calendar, Save, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import apiService from '../../services/apiService'
 
 const AdminMatchForm = () => {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEdit = Boolean(id)
+  
   const [formData, setFormData] = useState({
     team1Id: '',
     team2Id: '',
@@ -16,10 +19,42 @@ const AdminMatchForm = () => {
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(false)
   const [teamsLoading, setTeamsLoading] = useState(true)
+  
+  // Get updated matches from localStorage
+  const getUpdatedMatches = () => {
+    const saved = localStorage.getItem('updatedMatches')
+    return saved ? JSON.parse(saved) : {}
+  }
+  
+  // Save updated match to localStorage
+  const saveUpdatedMatch = (matchId, matchData) => {
+    const updatedMatches = getUpdatedMatches()
+    updatedMatches[matchId] = matchData
+    localStorage.setItem('updatedMatches', JSON.stringify(updatedMatches))
+  }
 
   useEffect(() => {
     fetchTeams()
-  }, [])
+    if (isEdit) {
+      fetchMatch()
+    }
+  }, [isEdit, id])
+  
+  const fetchMatch = async () => {
+    try {
+      const match = await apiService.getMatchById(id)
+      setFormData({
+        team1Id: match.team1Id?.toString() || '',
+        team2Id: match.team2Id?.toString() || '',
+        matchDate: match.matchDate || '',
+        venue: match.venue || ''
+      })
+    } catch (error) {
+      console.error('Error fetching match:', error)
+      toast.error('Failed to load match data')
+      navigate('/admin/matches')
+    }
+  }
 
   const fetchTeams = async () => {
     try {
@@ -69,12 +104,39 @@ const AdminMatchForm = () => {
         status: 'Scheduled'
       }
       
-      console.log('Creating match with data:', matchData)
+      let result
+      if (isEdit) {
+        console.log('Updating match ID:', id)
+        result = await apiService.updateMatch(id, matchData)
+        
+        // Save updated match data locally for demo mode
+        if (result.message && result.message.includes('simulated')) {
+          saveUpdatedMatch(id, matchData)
+        }
+        
+        toast.success('Match updated')
+      } else {
+        console.log('Creating match with data:', matchData)
+        result = await apiService.createMatch(matchData)
+        
+        // Save created match locally for demo mode
+        if (result.id) {
+          const createdMatches = JSON.parse(localStorage.getItem('createdMatches') || '[]')
+          const newMatch = {
+            ...result,
+            team1: teams.find(t => t.id.toString() === formData.team1Id)?.teamName || 'Team 1',
+            team2: teams.find(t => t.id.toString() === formData.team2Id)?.teamName || 'Team 2',
+            date: formData.matchDate.split('T')[0],
+            time: formData.matchDate.split('T')[1],
+            matchType: 'League'
+          }
+          createdMatches.push(newMatch)
+          localStorage.setItem('createdMatches', JSON.stringify(createdMatches))
+        }
+        
+        toast.success('Match scheduled successfully!')
+      }
       
-      const result = await apiService.createMatch(matchData)
-      console.log('Match created successfully:', result)
-      
-      toast.success('Match scheduled successfully!')
       navigate('/admin/matches')
     } catch (error) {
       console.error('Error creating match:', error)
@@ -113,7 +175,7 @@ const AdminMatchForm = () => {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
                 <Calendar className="w-8 h-8 text-purple-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Schedule Match</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Match' : 'Schedule Match'}</h1>
               </div>
               <button
                 onClick={() => navigate('/admin/matches')}
@@ -234,7 +296,7 @@ const AdminMatchForm = () => {
                   className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
                   <Save className="w-5 h-5" />
-                  <span>{loading ? 'Scheduling...' : 'Schedule Match'}</span>
+                  <span>{loading ? (isEdit ? 'Updating...' : 'Scheduling...') : (isEdit ? 'Update Match' : 'Schedule Match')}</span>
                 </button>
               </div>
             </form>

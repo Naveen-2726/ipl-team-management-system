@@ -10,6 +10,22 @@ const AdminMatches = () => {
   const [statusFilter, setStatusFilter] = useState('All')
   const [matches, setMatches] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deletedMatchIds, setDeletedMatchIds] = useState(() => {
+    const saved = localStorage.getItem('deletedMatchIds')
+    return saved ? JSON.parse(saved) : []
+  })
+  
+  // Get updated matches from localStorage
+  const getUpdatedMatches = () => {
+    const saved = localStorage.getItem('updatedMatches')
+    return saved ? JSON.parse(saved) : {}
+  }
+  
+  // Get created matches from localStorage
+  const getCreatedMatches = () => {
+    const saved = localStorage.getItem('createdMatches')
+    return saved ? JSON.parse(saved) : []
+  }
 
   useEffect(() => {
     fetchMatches()
@@ -18,34 +34,42 @@ const AdminMatches = () => {
   const fetchMatches = async () => {
     try {
       const data = await apiService.getMatches()
-      setMatches(data.content || [])
+      let matchesData = data.content || []
+      
+      // Filter out deleted matches (for demo mode)
+      matchesData = matchesData.filter(match => !deletedMatchIds.includes(match.id))
+      
+      // Add created matches from localStorage (for demo mode)
+      const createdMatches = getCreatedMatches().filter(match => !deletedMatchIds.includes(match.id))
+      matchesData = [...matchesData, ...createdMatches]
+      
+      // Apply updated match data from localStorage (for demo mode)
+      const updatedMatches = getUpdatedMatches()
+      matchesData = matchesData.map(match => {
+        if (updatedMatches[match.id]) {
+          return { ...match, ...updatedMatches[match.id] }
+        }
+        return match
+      })
+      
+      // Sort by date descending to show newest first
+      const sortedMatches = matchesData.sort((a, b) => {
+        const dateA = new Date(a.date || a.matchDate || 0)
+        const dateB = new Date(b.date || b.matchDate || 0)
+        return dateB - dateA
+      })
+      
+      setMatches(sortedMatches)
     } catch (error) {
       console.error('Error fetching matches:', error)
-      // Fallback data
-      setMatches([
-        { 
-          id: 1, 
-          team1: 'CSK', 
-          team2: 'MI', 
-          date: '2024-12-22', 
-          time: '19:30', 
-          venue: 'M. A. Chidambaram Stadium, Chennai', 
-          status: 'Upcoming',
-          matchType: 'League',
-          result: null
-        },
-        { 
-          id: 2, 
-          team1: 'RCB', 
-          team2: 'KKR', 
-          date: '2024-12-24', 
-          time: '15:30', 
-          venue: 'Eden Gardens, Kolkata', 
-          status: 'Upcoming',
-          matchType: 'League',
-          result: null
-        }
-      ])
+      // Show created matches from localStorage as fallback
+      const createdMatches = getCreatedMatches().filter(match => !deletedMatchIds.includes(match.id))
+      const sortedCreatedMatches = createdMatches.sort((a, b) => {
+        const dateA = new Date(a.date || a.matchDate || 0)
+        const dateB = new Date(b.date || b.matchDate || 0)
+        return dateB - dateA
+      })
+      setMatches(sortedCreatedMatches)
     } finally {
       setLoading(false)
     }
@@ -57,24 +81,20 @@ const AdminMatches = () => {
     if (window.confirm('Are you sure you want to delete this match?')) {
       try {
         console.log('Attempting to delete match ID:', id)
-        await apiService.deleteMatch(id)
+        const result = await apiService.deleteMatch(id)
+        
+        // Add to deleted list and persist
+        const newDeletedIds = [...deletedMatchIds, id]
+        setDeletedMatchIds(newDeletedIds)
+        localStorage.setItem('deletedMatchIds', JSON.stringify(newDeletedIds))
         
         // Remove from local state immediately
-        setMatches(matches.filter(match => match.id !== id))
-        toast.success('Match deleted successfully')
+        setMatches(prevMatches => prevMatches.filter(match => match.id !== id))
+        toast.success('Match deleted')
         
       } catch (error) {
         console.error('Error deleting match:', error)
-        console.error('Error details:', error.response?.data)
-        
-        // If API delete fails, still remove from UI (for demo purposes)
-        if (error.response?.status === 403 || error.response?.status === 404 || error.code === 'ECONNREFUSED') {
-          setMatches(matches.filter(match => match.id !== id))
-          toast.success('Match removed (demo mode)')
-        } else {
-          const errorMsg = error.response?.data?.message || error.message || 'Failed to delete match'
-          toast.error(errorMsg)
-        }
+        toast.error('Failed to delete match')
       }
     }
   }
@@ -221,20 +241,14 @@ const AdminMatches = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
-                        {match.status === 'Upcoming' && (
-                          <button 
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Start Match"
-                          >
-                            <Play className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button 
+
+                        <Link
+                          to={`/admin/matches/edit/${match.id}`}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit Match"
                         >
                           <Edit className="w-4 h-4" />
-                        </button>
+                        </Link>
                         <button 
                           onClick={() => handleDelete(match.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

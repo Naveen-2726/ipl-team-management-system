@@ -18,7 +18,6 @@ export const iplTitleCounts = {
   'Gujarat Titans': 1,        // 2022
   'GT': 1,
   
-  // Teams with 0 titles
   'Royal Challengers Bangalore': 1,
   'RCB': 1,
   
@@ -42,8 +41,9 @@ export const titleLeaderboard = [
   { team: 'Chennai Super Kings', titles: 5, years: ['2010', '2011', '2018', '2021', '2023'] },
   { team: 'Mumbai Indians', titles: 5, years: ['2013', '2015', '2017', '2019', '2020'] },
   { team: 'Kolkata Knight Riders', titles: 2, years: ['2012', '2014'] },
-  { team: 'Royal Challengers Bangalore', titles: 1, years: ['2024'] },
+
   { team: 'Rajasthan Royals', titles: 1, years: ['2008'] },
   { team: 'Sunrisers Hyderabad', titles: 1, years: ['2016'] },
-  { team: 'Gujarat Titans', titles: 1, years: ['2022'] }
+  { team: 'Gujarat Titans', titles: 1, years: ['2022'] },
+  { team: 'Royal Challengers Bangalore', titles: 1, years: ['2024'] }
 ]

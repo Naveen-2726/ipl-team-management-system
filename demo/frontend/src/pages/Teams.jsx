@@ -18,22 +18,36 @@ const Teams = () => {
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCity, setSelectedCity] = useState('All')
+  const [selectedTitles, setSelectedTitles] = useState('All')
+  const [selectedFoundedYear, setSelectedFoundedYear] = useState('All')
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   useEffect(() => {
     const fetchTeams = async () => {
       try {
         setLoading(true)
-        console.log('Fetching teams from API...')
         const response = await apiService.getTeams()
-        console.log('API response:', response)
+        let teamsData = response.content || response.data || response
         
-        // Handle paginated response
-        const teamsData = response.content || response.data || response
         if (Array.isArray(teamsData)) {
-          console.log('Teams data from API:', teamsData)
+          // Apply admin changes from localStorage
+          const deletedTeamIds = JSON.parse(localStorage.getItem('deletedTeamIds') || '[]')
+          const updatedTeams = JSON.parse(localStorage.getItem('updatedTeams') || '{}')
+          
+          // Filter out deleted teams
+          teamsData = teamsData.filter(team => !deletedTeamIds.includes(team.id))
+          
+          // Apply updates
+          teamsData = teamsData.map(team => {
+            if (updatedTeams[team.id]) {
+              return { ...team, ...updatedTeams[team.id] }
+            }
+            return team
+          })
+          
           setTeams(teamsData)
         } else {
-          console.log('Invalid teams data format:', teamsData)
           setTeams([])
         }
       } catch (error) {
@@ -98,11 +112,30 @@ const Teams = () => {
     founded: team.foundedYear || 2008
   }))
 
-  const filteredTeams = transformedTeams.filter(team =>
-    team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    team.shortName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    team.city.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const cities = ['All', ...new Set(transformedTeams.map(team => team.city))]
+  const titleOptions = ['All', '0 Titles', '1 Title', '2+ Titles', '5+ Titles']
+  const foundedYears = ['All', '2008', '2013', '2022']
+
+  const filteredTeams = transformedTeams.filter(team => {
+    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         team.shortName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         team.city.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCity = selectedCity === 'All' || team.city === selectedCity
+    
+    let matchesTitles = true
+    if (selectedTitles !== 'All') {
+      switch (selectedTitles) {
+        case '0 Titles': matchesTitles = team.titles === 0; break
+        case '1 Title': matchesTitles = team.titles === 1; break
+        case '2+ Titles': matchesTitles = team.titles >= 2 && team.titles < 5; break
+        case '5+ Titles': matchesTitles = team.titles >= 5; break
+      }
+    }
+    
+    const matchesFoundedYear = selectedFoundedYear === 'All' || team.founded.toString() === selectedFoundedYear
+    
+    return matchesSearch && matchesCity && matchesTitles && matchesFoundedYear
+  })
 
   const { sortedData, sortConfig, requestSort } = useSorting(filteredTeams)
   const { currentPage, paginatedData, goToPage } = usePagination(sortedData, 8)
@@ -139,14 +172,42 @@ const Teams = () => {
           <SearchFilter
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            filters={[
+              {
+                key: 'city',
+                label: 'City',
+                options: cities.map(city => ({ value: city, label: city }))
+              },
+              {
+                key: 'titles',
+                label: 'Titles Won',
+                options: titleOptions.map(title => ({ value: title, label: title }))
+              },
+              {
+                key: 'foundedYear',
+                label: 'Founded Year',
+                options: foundedYears.map(year => ({ value: year, label: year }))
+              }
+            ]}
+            activeFilters={{
+              city: selectedCity,
+              titles: selectedTitles,
+              foundedYear: selectedFoundedYear
+            }}
+            onFilterChange={(key, value) => {
+              if (key === 'city') setSelectedCity(value)
+              if (key === 'titles') setSelectedTitles(value)
+              if (key === 'foundedYear') setSelectedFoundedYear(value)
+            }}
             placeholder="Search teams, cities..."
+            showMoreFilters={showMoreFilters}
+            onToggleMoreFilters={() => setShowMoreFilters(!showMoreFilters)}
           />
           <div className="mt-4 flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
                 Showing {paginatedData.length} of {filteredTeams.length} teams
               </div>
-
             </div>
             <div className="flex items-center space-x-2">
               <button

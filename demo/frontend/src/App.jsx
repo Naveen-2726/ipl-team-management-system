@@ -129,6 +129,13 @@ function AppContent() {
                   </MainLayout>
                 </ProtectedRoute>
               } />
+              <Route path="/admin/teams/edit/:id" element={
+                <ProtectedRoute adminOnly>
+                  <MainLayout>
+                    <AdminTeamForm />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
               <Route path="/admin/players/add" element={
                 <ProtectedRoute adminOnly>
                   <MainLayout>
@@ -136,7 +143,21 @@ function AppContent() {
                   </MainLayout>
                 </ProtectedRoute>
               } />
+              <Route path="/admin/players/edit/:id" element={
+                <ProtectedRoute adminOnly>
+                  <MainLayout>
+                    <AdminPlayerForm />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
               <Route path="/admin/matches/add" element={
+                <ProtectedRoute adminOnly>
+                  <MainLayout>
+                    <AdminMatchForm />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/matches/edit/:id" element={
                 <ProtectedRoute adminOnly>
                   <MainLayout>
                     <AdminMatchForm />

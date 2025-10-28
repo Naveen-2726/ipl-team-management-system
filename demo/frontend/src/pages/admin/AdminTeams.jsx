@@ -10,6 +10,16 @@ const AdminTeams = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deletedTeamIds, setDeletedTeamIds] = useState(() => {
+    const saved = localStorage.getItem('deletedTeamIds')
+    return saved ? JSON.parse(saved) : []
+  })
+  
+  // Get updated teams from localStorage
+  const getUpdatedTeams = () => {
+    const saved = localStorage.getItem('updatedTeams')
+    return saved ? JSON.parse(saved) : {}
+  }
 
   useEffect(() => {
     fetchTeams()
@@ -18,7 +28,24 @@ const AdminTeams = () => {
   const fetchTeams = async () => {
     try {
       const data = await apiService.getTeams()
-      setTeams(data.content || [])
+      let teamsData = data.content || []
+      
+      // Filter out deleted teams (for demo mode)
+      teamsData = teamsData.filter(team => !deletedTeamIds.includes(team.id))
+      
+      // Apply updated team data from localStorage (for demo mode)
+      const updatedTeams = getUpdatedTeams()
+      teamsData = teamsData.map(team => {
+        if (updatedTeams[team.id]) {
+          return { ...team, ...updatedTeams[team.id] }
+        }
+        return team
+      })
+      
+      // Sort by ID ascending for consistent order
+      const sortedTeams = teamsData.sort((a, b) => (a.id || 0) - (b.id || 0))
+      
+      setTeams(sortedTeams)
     } catch (error) {
       console.error('Error fetching teams:', error)
       // Fallback data for admin
@@ -44,15 +71,20 @@ const AdminTeams = () => {
     if (window.confirm('Are you sure you want to delete this team?')) {
       try {
         console.log('Deleting team with ID:', id)
-        await apiService.deleteTeam(id)
-        setTeams(teams.filter(team => team.id !== id))
-        toast.success('Team deleted successfully')
-        fetchTeams() // Refresh the list
+        const result = await apiService.deleteTeam(id)
+        
+        // Add to deleted list and persist
+        const newDeletedIds = [...deletedTeamIds, id]
+        setDeletedTeamIds(newDeletedIds)
+        localStorage.setItem('deletedTeamIds', JSON.stringify(newDeletedIds))
+        
+        // Remove from local state immediately
+        setTeams(prevTeams => prevTeams.filter(team => team.id !== id))
+        toast.success('Team deleted')
+        
       } catch (error) {
         console.error('Error deleting team:', error)
-        console.error('Error response:', error.response?.data)
-        const errorMsg = error.response?.data?.message || error.message || 'Failed to delete team'
-        toast.error(errorMsg)
+        toast.error('Failed to delete team')
       }
     }
   }
@@ -156,12 +188,13 @@ const AdminTeams = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button 
+                        <Link
+                          to={`/admin/teams/edit/${team.id}`}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit Team"
                         >
                           <Edit className="w-4 h-4" />
-                        </button>
+                        </Link>
                         <button 
                           onClick={() => handleDelete(team.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

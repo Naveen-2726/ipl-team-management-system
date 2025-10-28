@@ -13,6 +13,16 @@ const AdminPlayers = () => {
   const [players, setPlayers] = useState([])
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deletedPlayerIds, setDeletedPlayerIds] = useState(() => {
+    const saved = localStorage.getItem('deletedPlayerIds')
+    return saved ? JSON.parse(saved) : []
+  })
+  
+  // Get updated players from localStorage
+  const getUpdatedPlayers = () => {
+    const saved = localStorage.getItem('updatedPlayers')
+    return saved ? JSON.parse(saved) : {}
+  }
 
   useEffect(() => {
     fetchPlayers()
@@ -32,20 +42,20 @@ const AdminPlayers = () => {
       console.log('Players API response:', data)
       let playersData = data.content || data.data || data || []
       
-      // If API fails or returns empty, use IPL 2025 data
-      if (playersData.length === 0) {
-        console.log('Using IPL 2025 fallback data')
-        playersData = ipl2025Players.map(player => {
-          const team = ipl2025Teams.find(t => t.id === player.teamId)
-          return {
-            ...player,
-            team: team ? { teamName: team.teamName, shortName: team.shortName } : null
-          }
-        })
-      }
+      // Filter out deleted players (for demo mode)
+      playersData = playersData.filter(player => !deletedPlayerIds.includes(player.id))
+      
+      // Apply updated player data from localStorage (for demo mode)
+      const updatedPlayers = getUpdatedPlayers()
+      playersData = playersData.map(player => {
+        if (updatedPlayers[player.id]) {
+          return { ...player, ...updatedPlayers[player.id] }
+        }
+        return player
+      })
       
       // Sort by ID descending to show newest first
-      const sortedPlayers = playersData.sort((a, b) => b.id - a.id)
+      const sortedPlayers = playersData.sort((a, b) => (b.id || 0) - (a.id || 0))
       
       console.log('Total players found:', sortedPlayers.length)
       if (sortedPlayers.length > 0) {
@@ -54,16 +64,8 @@ const AdminPlayers = () => {
       setPlayers(sortedPlayers)
     } catch (error) {
       console.error('Error fetching players:', error)
-      // Use IPL 2025 data as fallback
-      const fallbackPlayers = ipl2025Players.map(player => {
-        const team = ipl2025Teams.find(t => t.id === player.teamId)
-        return {
-          ...player,
-          team: team ? { teamName: team.teamName, shortName: team.shortName } : null
-        }
-      })
-      setPlayers(fallbackPlayers)
-      toast.success('Loaded IPL 2025 player data!')
+      setPlayers([])
+      toast.error('Failed to load players')
     } finally {
       setLoading(false)
     }
@@ -91,28 +93,21 @@ const AdminPlayers = () => {
     if (window.confirm('Are you sure you want to delete this player?')) {
       try {
         console.log('Attempting to delete player ID:', id)
-        await apiService.deletePlayer(id)
+        const result = await apiService.deletePlayer(id)
+        
+        // Add to deleted list and persist
+        const newDeletedIds = [...deletedPlayerIds, id]
+        setDeletedPlayerIds(newDeletedIds)
+        localStorage.setItem('deletedPlayerIds', JSON.stringify(newDeletedIds))
         
         // Remove from local state immediately
-        setPlayers(players.filter(player => player.id !== id))
-        toast.success('Player deleted successfully')
+        setPlayers(prevPlayers => prevPlayers.filter(player => player.id !== id))
         
-        // Refresh the list to ensure consistency
-        setTimeout(() => {
-          fetchPlayers()
-        }, 500)
+        toast.success('Player deleted')
         
       } catch (error) {
         console.error('Error deleting player:', error)
-        console.error('Error details:', error.response?.data)
-        
-        // If API delete fails, still remove from UI (for demo purposes)
-        if (error.response?.status === 403 || error.response?.status === 404) {
-          setPlayers(players.filter(player => player.id !== id))
-          toast.success('Player removed (simulated deletion)')
-        } else {
-          toast.error(`Failed to delete player: ${error.message}`)
-        }
+        toast.error('Failed to delete player')
       }
     }
   }
@@ -251,9 +246,12 @@ const AdminPlayers = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        <Link
+                          to={`/admin/players/edit/${player.id}`}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
                           <Edit className="w-4 h-4" />
-                        </button>
+                        </Link>
                         <button 
                           onClick={() => handleDelete(player.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

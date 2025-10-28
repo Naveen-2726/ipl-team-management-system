@@ -1,26 +1,77 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Trophy, Users, MapPin, Calendar, Star, Award } from 'lucide-react'
 import { getTeamTitles } from '../data/iplTitles'
 import { TeamLogo } from '../utils/logoUtils'
+import apiService from '../services/apiService'
+import EnhancedLoadingScreen from '../components/EnhancedLoadingScreen'
 
 const TeamDetail = () => {
   const { id } = useParams()
+  const [team, setTeam] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   
-  // Team data with correct titles
-  const team = {
-    id: 1,
-    name: 'Chennai Super Kings',
-    shortName: 'CSK',
-    city: 'Chennai',
-    founded: 2008,
-    captain: 'MS Dhoni',
-    coach: 'Stephen Fleming',
-    homeGround: 'M. A. Chidambaram Stadium',
-    titles: getTeamTitles('Chennai Super Kings'),
-    colors: ['#FFFF00', '#0066CC'],
-    logo: '🦁'
+  // Get updated teams from localStorage
+  const getUpdatedTeams = () => {
+    const saved = localStorage.getItem('updatedTeams')
+    return saved ? JSON.parse(saved) : {}
+  }
+  
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        setLoading(true)
+        const response = await apiService.getTeamById(id)
+        
+        // Apply any updates from localStorage
+        const updatedTeams = getUpdatedTeams()
+        const finalTeam = updatedTeams[id] ? { ...response, ...updatedTeams[id] } : response
+        
+        // Add additional data for display
+        const teamWithExtras = {
+          ...finalTeam,
+          name: finalTeam.teamName,
+          shortName: finalTeam.teamName?.split(' ').map(word => word[0]).join('') || 'TM',
+          titles: getTeamTitles(finalTeam.teamName),
+          colors: ['#FFFF00', '#0066CC'],
+          captain: finalTeam.captain || 'TBD',
+          coach: finalTeam.coach || 'TBD',
+          homeGround: finalTeam.homeGround || 'TBD',
+          founded: finalTeam.foundedYear || 2008
+        }
+        
+        setTeam(teamWithExtras)
+      } catch (error) {
+        console.error('Error fetching team:', error)
+        setError('Team not found')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    if (id) {
+      fetchTeam()
+    }
+  }, [id])
+  
+  if (loading) {
+    return <EnhancedLoadingScreen message="Loading team details..." />
+  }
+  
+  if (error || !team) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 text-center">
+            <Trophy className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Team Not Found</h1>
+            <p className="text-gray-600">The team you're looking for doesn't exist or hasn't been added yet.</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const players = [
@@ -47,7 +98,7 @@ const TeamDetail = () => {
             <div className="relative z-10 flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold mb-2">{team.name}</h1>
-                <p className="text-xl opacity-90">{team.shortName} • {team.city}</p>
+                <p className="text-xl opacity-90">{team.shortName} • {team.city || 'India'}</p>
                 <div className="flex items-center space-x-4 mt-4">
                   <div className="flex items-center space-x-2">
                     <Trophy className="w-5 h-5" />

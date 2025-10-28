@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { 
   FileText, Shield, User, Calendar, Filter, Search, 
   Eye, Download, RefreshCw, AlertCircle, CheckCircle,
-  XCircle, Clock, Database, Settings, Trash2, Edit
+  XCircle, Clock, Database, Settings, Trash2, Edit, X
 } from 'lucide-react'
 import apiService from '../services/apiService'
 
@@ -15,6 +15,8 @@ const AuditLogs = () => {
   const [dateRange, setDateRange] = useState('today')
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedLog, setSelectedLog] = useState(null)
+  const [showModal, setShowModal] = useState(false)
   const logsPerPage = 10
 
   useEffect(() => {
@@ -430,7 +432,14 @@ const AuditLogs = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <button className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
+                        <button 
+                          onClick={() => {
+                            setSelectedLog(log)
+                            setShowModal(true)
+                          }}
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="View Details"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
                       </td>
@@ -477,6 +486,100 @@ const AuditLogs = () => {
             </div>
           )}
         </motion.div>
+
+        {/* Modal for Log Details */}
+        {showModal && selectedLog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-900">Audit Log Details</h3>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Log ID</label>
+                    <p className="text-lg font-semibold text-gray-900">{selectedLog.id}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Action</label>
+                    <div className="flex items-center space-x-2">
+                      {getActionIcon(selectedLog.action)}
+                      <span className="text-lg font-semibold text-gray-900">{selectedLog.action}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Entity</label>
+                    <p className="text-lg font-semibold text-gray-900">{selectedLog.entity}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Entity ID</label>
+                    <p className="text-lg font-semibold text-gray-900">{selectedLog.entityId || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">User</label>
+                    <p className="text-lg font-semibold text-gray-900">{selectedLog.username}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Role</label>
+                    <p className="text-lg font-semibold text-gray-900">{selectedLog.userRole || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedLog.status)}`}>
+                      {selectedLog.status}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Timestamp</label>
+                    <p className="text-lg font-semibold text-gray-900">{formatTimestamp(selectedLog.timestamp)}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Description</label>
+                  <p className="text-gray-900 bg-gray-50 p-4 rounded-lg">{selectedLog.description}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">IP Address</label>
+                  <p className="text-gray-900">{selectedLog.ipAddress || 'N/A'}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">User Agent</label>
+                  <p className="text-gray-900 text-sm bg-gray-50 p-4 rounded-lg break-all">{selectedLog.userAgent || 'N/A'}</p>
+                </div>
+                
+                {selectedLog.details && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Additional Details</label>
+                    <pre className="text-sm text-gray-900 bg-gray-50 p-4 rounded-lg overflow-x-auto">
+                      {JSON.stringify(selectedLog.details, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

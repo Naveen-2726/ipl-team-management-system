@@ -4,29 +4,110 @@ import { Settings, Save, Database, Shield, Bell, Users, Globe, Palette } from 'l
 import toast from 'react-hot-toast'
 
 const AdminSettings = () => {
-  const [settings, setSettings] = useState({
-    siteName: 'IPL Team Management System',
-    siteDescription: 'The ultimate platform for managing IPL teams',
-    adminEmail: 'admin@ipltms.com',
-    maxTeams: 10,
-    maxPlayersPerTeam: 25,
-    seasonYear: 2024,
-    enableNotifications: true,
-    enablePublicRegistration: false,
-    maintenanceMode: false,
-    backupFrequency: 'daily',
-    theme: 'light'
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('adminSettings')
+    return saved ? JSON.parse(saved) : {
+      siteName: 'IPL Team Management System',
+      siteDescription: 'The ultimate platform for managing IPL teams',
+      adminEmail: 'admin@ipltms.com',
+      maxTeams: 10,
+      maxPlayersPerTeam: 25,
+      seasonYear: 2024,
+      enableNotifications: true,
+      enablePublicRegistration: false,
+      maintenanceMode: false,
+      backupFrequency: 'daily',
+      theme: 'light'
+    }
   })
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (key, value) => {
-    setSettings(prev => ({
-      ...prev,
+    const newSettings = {
+      ...settings,
       [key]: value
-    }))
+    }
+    setSettings(newSettings)
+    // Auto-save to localStorage
+    localStorage.setItem('adminSettings', JSON.stringify(newSettings))
+    toast.success(`${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} updated`)
   }
 
-  const handleSave = () => {
-    toast.success('Settings saved successfully!')
+  const handleSave = async () => {
+    setLoading(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Save to localStorage
+      localStorage.setItem('adminSettings', JSON.stringify(settings))
+      
+      // Apply theme changes
+      if (settings.theme === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+      
+      toast.success('All settings saved successfully!')
+    } catch (error) {
+      toast.error('Failed to save settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const handleReset = () => {
+    if (window.confirm('Are you sure you want to reset all settings to default?')) {
+      const defaultSettings = {
+        siteName: 'IPL Team Management System',
+        siteDescription: 'The ultimate platform for managing IPL teams',
+        adminEmail: 'admin@ipltms.com',
+        maxTeams: 10,
+        maxPlayersPerTeam: 25,
+        seasonYear: 2024,
+        enableNotifications: true,
+        enablePublicRegistration: false,
+        maintenanceMode: false,
+        backupFrequency: 'daily',
+        theme: 'light'
+      }
+      setSettings(defaultSettings)
+      localStorage.setItem('adminSettings', JSON.stringify(defaultSettings))
+      toast.success('Settings reset to default values')
+    }
+  }
+  
+  const handleExportSettings = () => {
+    const dataStr = JSON.stringify(settings, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `ipl-settings-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Settings exported successfully')
+  }
+  
+  const handleImportSettings = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const importedSettings = JSON.parse(e.target.result)
+          setSettings(importedSettings)
+          localStorage.setItem('adminSettings', JSON.stringify(importedSettings))
+          toast.success('Settings imported successfully')
+        } catch (error) {
+          toast.error('Invalid settings file')
+        }
+      }
+      reader.readAsText(file)
+    }
   }
 
   return (
@@ -244,14 +325,46 @@ const AdminSettings = () => {
                 </button>
               </div>
 
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-4 border-t border-gray-200 space-y-3">
                 <button
                   onClick={handleSave}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
                   <Save className="w-5 h-5" />
-                  <span>Save Settings</span>
+                  <span>{loading ? 'Saving...' : 'Save All Settings'}</span>
                 </button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleReset}
+                    className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={handleExportSettings}
+                    className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+                  >
+                    Export
+                  </button>
+                </div>
+                
+                <div>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportSettings}
+                    className="hidden"
+                    id="import-settings"
+                  />
+                  <label
+                    htmlFor="import-settings"
+                    className="w-full block text-center px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
+                  >
+                    Import Settings
+                  </label>
+                </div>
               </div>
             </div>
           </motion.div>

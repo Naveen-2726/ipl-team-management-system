@@ -22,10 +22,21 @@ const Evaluations = () => {
   const fetchEvaluations = async () => {
     try {
       const data = await apiService.getEvaluations()
-      setEvaluations(data.content || [])
+      let evaluationsData = data.content || []
+      
+      // Add created evaluations from localStorage
+      const createdEvaluations = JSON.parse(localStorage.getItem('createdEvaluations') || '[]')
+      evaluationsData = [...evaluationsData, ...createdEvaluations]
+      
+      setEvaluations(evaluationsData)
     } catch (error) {
       console.error('Error fetching evaluations:', error)
-      // Fallback data
+      // Show created evaluations from localStorage as fallback
+      const createdEvaluations = JSON.parse(localStorage.getItem('createdEvaluations') || '[]')
+      if (createdEvaluations.length > 0) {
+        setEvaluations(createdEvaluations)
+      } else {
+        // Fallback data
       setEvaluations([
         {
           id: 1,
@@ -73,10 +84,13 @@ const Evaluations = () => {
           status: 'pending'
         }
       ])
+      }
     } finally {
       setLoading(false)
     }
   }
+  
+
 
   const fetchPlayers = async () => {
     try {
@@ -226,13 +240,7 @@ const Evaluations = () => {
                 <option value="in-progress">In Progress</option>
               </select>
             </div>
-            <Link
-              to="/admin/evaluations/add"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Evaluation</span>
-            </Link>
+
           </div>
         </motion.div>
 
@@ -327,9 +335,7 @@ const Evaluations = () => {
               <p className="text-gray-600 mb-4">
                 {searchTerm ? 'No evaluations match your search criteria.' : 'No player evaluations have been created yet.'}
               </p>
-              <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Create First Evaluation
-              </button>
+
             </div>
           )}
         </motion.div>

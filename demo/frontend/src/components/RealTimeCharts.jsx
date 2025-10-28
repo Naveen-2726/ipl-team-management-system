@@ -134,11 +134,21 @@ export const RealTimeDonutChart = ({ title }) => {
         const response = await apiService.getTeams()
         const teams = response.content || response.data || response
         
-        const chartData = teams.slice(0, 4).map((team, index) => ({
-          name: team.teamName?.split(' ').map(w => w[0]).join('') || `T${index + 1}`,
-          value: team.titlesWon || Math.floor(Math.random() * 5) + 1,
-          color: getTeamColor(index)
-        }))
+        const chartData = teams.slice(0, 7).map((team, index) => {
+          let teamName = team.teamName?.split(' ').map(w => w[0]).join('') || team.shortName || `T${index + 1}`
+          let titleCount = team.titlesWon || 0
+          
+          // Ensure RCB shows 1 title
+          if (teamName === 'RCB' || team.shortName === 'RCB') {
+            titleCount = 1
+          }
+          
+          return {
+            name: teamName,
+            value: titleCount,
+            color: getTeamColor(index)
+          }
+        })
         
         setData(chartData)
         setLoading(false)

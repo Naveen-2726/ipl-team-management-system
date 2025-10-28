@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Trophy, Save, ArrowLeft, Upload } from 'lucide-react'
 import toast from 'react-hot-toast'
 import apiService from '../../services/apiService'
 
 const AdminTeamForm = () => {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEdit = Boolean(id)
+  
   const [formData, setFormData] = useState({
     teamName: '',
     captain: '',
@@ -16,6 +19,43 @@ const AdminTeamForm = () => {
     homeGround: ''
   })
   const [loading, setLoading] = useState(false)
+  
+  // Get updated teams from localStorage
+  const getUpdatedTeams = () => {
+    const saved = localStorage.getItem('updatedTeams')
+    return saved ? JSON.parse(saved) : {}
+  }
+  
+  // Save updated team to localStorage
+  const saveUpdatedTeam = (teamId, teamData) => {
+    const updatedTeams = getUpdatedTeams()
+    updatedTeams[teamId] = teamData
+    localStorage.setItem('updatedTeams', JSON.stringify(updatedTeams))
+  }
+  
+  useEffect(() => {
+    if (isEdit) {
+      fetchTeam()
+    }
+  }, [isEdit, id])
+  
+  const fetchTeam = async () => {
+    try {
+      const team = await apiService.getTeamById(id)
+      setFormData({
+        teamName: team.teamName || '',
+        captain: team.captain || '',
+        city: team.city || '',
+        coach: team.coach || '',
+        foundedYear: team.foundedYear || 2024,
+        homeGround: team.homeGround || ''
+      })
+    } catch (error) {
+      console.error('Error fetching team:', error)
+      toast.error('Failed to load team data')
+      navigate('/admin/teams')
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -23,15 +63,31 @@ const AdminTeamForm = () => {
     
     try {
       const teamData = {
-        teamName: formData.teamName.trim()
+        teamName: formData.teamName.trim(),
+        captain: formData.captain.trim(),
+        city: formData.city.trim(),
+        coach: formData.coach.trim(),
+        foundedYear: parseInt(formData.foundedYear),
+        homeGround: formData.homeGround.trim()
       }
       
-      console.log('Creating team with data:', teamData)
+      let result
+      if (isEdit) {
+        console.log('Updating team ID:', id)
+        result = await apiService.updateTeam(id, teamData)
+        
+        // Save updated team data locally for demo mode
+        if (result.message && result.message.includes('simulated')) {
+          saveUpdatedTeam(id, teamData)
+        }
+        
+        toast.success('Team updated')
+      } else {
+        console.log('Creating team with data:', teamData)
+        result = await apiService.createTeam(teamData)
+        toast.success('Team created successfully!')
+      }
       
-      const result = await apiService.createTeam(teamData)
-      
-      console.log('Team created successfully:', result)
-      toast.success('Team created successfully!')
       navigate('/admin/teams')
     } catch (error) {
       console.error('Error creating team:', error)
@@ -67,7 +123,7 @@ const AdminTeamForm = () => {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
                 <Trophy className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Add New Team</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Team' : 'Add New Team'}</h1>
               </div>
               <button
                 onClick={() => navigate('/admin/teams')}
@@ -184,7 +240,7 @@ const AdminTeamForm = () => {
                   className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
                   <Save className="w-5 h-5" />
-                  <span>{loading ? 'Creating...' : 'Create Team'}</span>
+                  <span>{loading ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update Team' : 'Create Team')}</span>
                 </button>
               </div>
             </form>

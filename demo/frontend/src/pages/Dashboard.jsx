@@ -190,7 +190,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold mb-2">
-                  Welcome back, {user?.username}! 👋
+                  Welcome back, {user?.username}!
                 </h1>
                 <p className="text-xl text-blue-100">
                   Ready to dive into the IPL action?
@@ -300,7 +300,7 @@ const Dashboard = () => {
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-gray-900">{player.runs}</p>
-                      <p className="text-sm text-gray-600">Avg: {player.average}</p>
+                      <p className="text-sm text-gray-600">SR: {player.strikeRate || 'N/A'}</p>
                     </div>
                   </div>
                 )) : (

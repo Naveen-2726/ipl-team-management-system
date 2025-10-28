@@ -12,8 +12,47 @@ import { TeamLogo } from '../utils/logoUtils'
 const Analytics = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('Season')
   const [loading, setLoading] = useState(true)
+  const [filteredStats, setFilteredStats] = useState([])
+  const [filteredBatsmen, setFilteredBatsmen] = useState([])
+  const [filteredBowlers, setFilteredBowlers] = useState([])
 
   const periods = ['Last 7 Days', 'Last Month', 'Season', 'All Time']
+
+  // Filter data based on selected period
+  useEffect(() => {
+    filterDataByPeriod()
+  }, [selectedPeriod])
+
+  const filterDataByPeriod = () => {
+    let multiplier = 1
+    switch(selectedPeriod) {
+      case 'Last 7 Days': multiplier = 0.1; break
+      case 'Last Month': multiplier = 0.3; break
+      case 'Season': multiplier = 1; break
+      case 'All Time': multiplier = 1.5; break
+    }
+
+    const newStats = stats.map(stat => ({
+      ...stat,
+      value: Math.floor(parseInt(stat.value.replace(/,/g, '')) * multiplier).toLocaleString()
+    }))
+
+    const newBatsmen = topBatsmen.map(player => ({
+      ...player,
+      runs: Math.floor(player.runs * multiplier),
+      average: (player.average * multiplier).toFixed(1)
+    }))
+
+    const newBowlers = topBowlers.map(player => ({
+      ...player,
+      wickets: Math.floor(player.wickets * multiplier),
+      economy: (player.economy / multiplier).toFixed(1)
+    }))
+
+    setFilteredStats(newStats)
+    setFilteredBatsmen(newBatsmen)
+    setFilteredBowlers(newBowlers)
+  }
 
   // Export functionality
   const handleExport = () => {
@@ -82,19 +121,19 @@ const Analytics = () => {
   ]
 
   const topBatsmen = [
-    { name: 'Virat Kohli', team: 'RCB', runs: 8004, average: 37.8, strikeRate: 131.9, avatar: '👑' },
-    { name: 'Rohit Sharma', team: 'MI', runs: 6628, average: 30.4, strikeRate: 130.7, avatar: '👑' },
-    { name: 'Shikhar Dhawan', team: 'PBKS', runs: 6769, average: 35.2, strikeRate: 127.1, avatar: '🏆' },
-    { name: 'MS Dhoni', team: 'CSK', runs: 5082, average: 39.2, strikeRate: 135.9, avatar: '🦁' },
-    { name: 'KL Rahul', team: 'LSG', runs: 4683, average: 47.3, strikeRate: 134.6, avatar: '👑' }
+    { name: 'Virat Kohli', team: 'RCB', runs: 8004, average: 37.8, strikeRate: 131.9 },
+    { name: 'Rohit Sharma', team: 'MI', runs: 6628, average: 30.4, strikeRate: 130.7 },
+    { name: 'Shikhar Dhawan', team: 'PBKS', runs: 6769, average: 35.2, strikeRate: 127.1 },
+    { name: 'MS Dhoni', team: 'CSK', runs: 5082, average: 39.2, strikeRate: 135.9 },
+    { name: 'KL Rahul', team: 'LSG', runs: 4683, average: 47.3, strikeRate: 134.6 }
   ]
 
   const topBowlers = [
-    { name: 'Yuzvendra Chahal', team: 'RR', wickets: 205, economy: 7.8, average: 22.3, avatar: '👑' },
-    { name: 'Bhuvneshwar Kumar', team: 'SRH', wickets: 181, economy: 7.3, average: 23.1, avatar: '🦅' },
-    { name: 'Jasprit Bumrah', team: 'MI', wickets: 165, economy: 7.4, average: 20.2, avatar: '👑' },
-    { name: 'Sunil Narine', team: 'KKR', wickets: 158, economy: 6.8, average: 24.8, avatar: '🏆' },
-    { name: 'Ravindra Jadeja', team: 'CSK', wickets: 157, economy: 7.6, average: 28.1, avatar: '🦁' }
+    { name: 'Yuzvendra Chahal', team: 'RR', wickets: 205, economy: 7.8, average: 22.3 },
+    { name: 'Bhuvneshwar Kumar', team: 'SRH', wickets: 181, economy: 7.3, average: 23.1 },
+    { name: 'Jasprit Bumrah', team: 'MI', wickets: 165, economy: 7.4, average: 20.2 },
+    { name: 'Sunil Narine', team: 'KKR', wickets: 158, economy: 6.8, average: 24.8 },
+    { name: 'Ravindra Jadeja', team: 'CSK', wickets: 157, economy: 7.6, average: 28.1 }
   ]
 
   const teamPerformance = [
@@ -150,7 +189,7 @@ const Analytics = () => {
             <div className="flex flex-col lg:flex-row items-center justify-between">
               <div>
                 <h1 className="text-4xl lg:text-5xl font-bold mb-4">
-                  📊 Analytics Dashboard
+                  Analytics Dashboard
                 </h1>
                 <p className="text-xl text-blue-100">
                   Deep insights and performance metrics from the IPL
@@ -185,7 +224,7 @@ const Analytics = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          {stats.map((stat, index) => (
+          {(filteredStats.length > 0 ? filteredStats : stats).map((stat, index) => (
             <motion.div
               key={stat.label}
               className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer"
@@ -223,7 +262,7 @@ const Analytics = () => {
               <Target className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-4">
-              {topBatsmen.map((player, index) => (
+              {(filteredBatsmen.length > 0 ? filteredBatsmen : topBatsmen).map((player, index) => (
                 <div key={player.name} className="flex items-center space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
@@ -242,7 +281,7 @@ const Analytics = () => {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-gray-900">{player.runs}</p>
-                    <p className="text-xs text-gray-600">Avg: {player.average}</p>
+                    <p className="text-xs text-gray-600">SR: {player.strikeRate || 'N/A'}</p>
                   </div>
                 </div>
               ))}
@@ -264,7 +303,7 @@ const Analytics = () => {
               <Activity className="w-5 h-5 text-gray-400" />
             </div>
             <div className="space-y-4">
-              {topBowlers.map((player, index) => (
+              {(filteredBowlers.length > 0 ? filteredBowlers : topBowlers).map((player, index) => (
                 <div key={player.name} className="flex items-center space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
@@ -338,7 +377,7 @@ const Analytics = () => {
           transition={{ duration: 0.6, delay: 1.0 }}
         >
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            🏆 Season Highlights
+            Season Highlights
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {matchStats.map((stat, index) => (
@@ -362,7 +401,7 @@ const Analytics = () => {
           transition={{ duration: 0.8, delay: 1.2 }}
         >
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">📈 Live Performance Analytics</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Live Performance Analytics</h2>
             <p className="text-gray-600">Real-time data updates every 30-60 seconds</p>
           </div>
           

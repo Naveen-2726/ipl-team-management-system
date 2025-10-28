@@ -1,25 +1,72 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Users, Save, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import apiService from '../../services/apiService'
 
 const AdminPlayerForm = () => {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEdit = Boolean(id)
+  
   const [formData, setFormData] = useState({
     playerName: '',
     age: '',
     role: 'Batsman',
-    teamId: ''
+    teamId: '',
+    runsScored: '',
+    wicketsTaken: '',
+    priceCrores: '',
+    strikeRate: ''
   })
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(false)
   const [teamsLoading, setTeamsLoading] = useState(true)
+  const [playerLoading, setPlayerLoading] = useState(isEdit)
+  
+  // Get updated players from localStorage
+  const getUpdatedPlayers = () => {
+    const saved = localStorage.getItem('updatedPlayers')
+    return saved ? JSON.parse(saved) : {}
+  }
+  
+  // Save updated player to localStorage
+  const saveUpdatedPlayer = (playerId, playerData) => {
+    const updatedPlayers = getUpdatedPlayers()
+    updatedPlayers[playerId] = playerData
+    localStorage.setItem('updatedPlayers', JSON.stringify(updatedPlayers))
+  }
 
   useEffect(() => {
     fetchTeams()
-  }, [])
+    if (isEdit) {
+      fetchPlayer()
+    }
+  }, [isEdit, id])
+  
+  const fetchPlayer = async () => {
+    try {
+      setPlayerLoading(true)
+      const player = await apiService.getPlayerById(id)
+      setFormData({
+        playerName: player.playerName || player.name || '',
+        age: player.age?.toString() || '',
+        role: player.role || 'Batsman',
+        teamId: player.teamId?.toString() || player.team?.id?.toString() || '',
+        runsScored: player.runsScored?.toString() || '',
+        wicketsTaken: player.wicketsTaken?.toString() || '',
+        priceCrores: player.priceCrores?.toString() || '',
+        strikeRate: player.strikeRate?.toString() || ''
+      })
+    } catch (error) {
+      console.error('Error fetching player:', error)
+      toast.error('Failed to load player data')
+      navigate('/admin/players')
+    } finally {
+      setPlayerLoading(false)
+    }
+  }
 
   const fetchTeams = async () => {
     try {
@@ -59,29 +106,36 @@ const AdminPlayerForm = () => {
         playerName: formData.playerName.trim(),
         role: formData.role,
         age: parseInt(formData.age),
-        teamId: parseInt(formData.teamId)
+        teamId: parseInt(formData.teamId),
+        runsScored: formData.runsScored ? parseInt(formData.runsScored) : 0,
+        wicketsTaken: formData.wicketsTaken ? parseInt(formData.wicketsTaken) : 0,
+        priceCrores: formData.priceCrores ? parseFloat(formData.priceCrores) : 0,
+        strikeRate: formData.strikeRate ? parseFloat(formData.strikeRate) : 0
       }
       
       console.log('Sending player data:', playerData)
-      console.log('Backend URL:', 'http://localhost:8080/players/add')
       
-      // Check if backend is running
-      const result = await apiService.createPlayer(playerData)
+      let result
+      if (isEdit) {
+        console.log('Updating player ID:', id)
+        result = await apiService.updatePlayer(id, playerData)
+        
+        // Save updated player data locally for demo mode
+        if (result.message && result.message.includes('simulated')) {
+          saveUpdatedPlayer(id, playerData)
+        }
+      } else {
+        console.log('Creating new player')
+        result = await apiService.createPlayer(playerData)
+      }
       console.log('Player created successfully:', result)
       console.log('Full response:', result)
       console.log('Response type:', typeof result)
       console.log('Response keys:', Object.keys(result || {}))
       
-      // Check if player was actually created
-      if (result && (result.id || result.playerId)) {
-        console.log('Player ID received:', result.id || result.playerId)
-      } else {
-        console.warn('No player ID in response - player might not be saved!')
-      }
-      
-      // Verify player was actually saved by checking the response
+      // Check if player was actually saved
       if (result && (result.id || result.playerId || result.success !== false)) {
-        toast.success(`Player ${playerData.playerName} added successfully!`)
+        toast.success(`Player ${playerData.playerName} ${isEdit ? 'updated' : 'added'} successfully!`)
         
         // Verify by fetching players to see if it's there
         try {
@@ -152,7 +206,7 @@ const AdminPlayerForm = () => {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
                 <Users className="w-8 h-8 text-green-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Add New Player</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{isEdit ? 'Edit Player' : 'Add New Player'}</h1>
               </div>
               <button
                 onClick={() => navigate('/admin/players')}
@@ -245,8 +299,70 @@ const AdminPlayerForm = () => {
                     <p className="text-sm text-red-600 mt-1">No teams available. Please add teams first.</p>
                   )}
                 </div>
+              </div>
 
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Runs Scored
+                  </label>
+                  <input
+                    type="number"
+                    name="runsScored"
+                    value={formData.runsScored}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="e.g., 450"
+                    min="0"
+                  />
+                </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Wickets Taken
+                  </label>
+                  <input
+                    type="number"
+                    name="wicketsTaken"
+                    value={formData.wicketsTaken}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="e.g., 15"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Strike Rate
+                  </label>
+                  <input
+                    type="number"
+                    name="strikeRate"
+                    value={formData.strikeRate}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="e.g., 135.5"
+                    min="0"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price (Crores)
+                  </label>
+                  <input
+                    type="number"
+                    name="priceCrores"
+                    value={formData.priceCrores}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="e.g., 15.25"
+                    min="0"
+                    step="0.25"
+                  />
+                </div>
               </div>
 
 
@@ -265,7 +381,7 @@ const AdminPlayerForm = () => {
                   className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
                   <Save className="w-5 h-5" />
-                  <span>{loading ? 'Adding...' : 'Add Player'}</span>
+                  <span>{loading ? (isEdit ? 'Updating...' : 'Adding...') : (isEdit ? 'Update Player' : 'Add Player')}</span>
                 </button>
               </div>
             </form>

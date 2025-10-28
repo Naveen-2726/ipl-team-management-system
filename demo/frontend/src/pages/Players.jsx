@@ -20,25 +20,33 @@ const Players = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState('All')
   const [selectedTeam, setSelectedTeam] = useState('All')
+  const [selectedNationality, setSelectedNationality] = useState('All')
+  const [selectedPriceRange, setSelectedPriceRange] = useState('All')
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
         setLoading(true)
-        console.log('Fetching players from API...')
-        const response = await apiService.getPlayers(0, 500) // Fetch more players
-        console.log('Players API response:', response)
+        const response = await apiService.getPlayers(0, 500)
+        let playersData = response.content || response.data || response || []
         
-        // Handle different response formats
-        const playersData = response.content || response.data || response || []
-        console.log('Players data from API:', playersData)
+        // Apply admin changes from localStorage
+        const deletedPlayerIds = JSON.parse(localStorage.getItem('deletedPlayerIds') || '[]')
+        const updatedPlayers = JSON.parse(localStorage.getItem('updatedPlayers') || '{}')
         
-        if (Array.isArray(playersData)) {
-          setPlayers(playersData)
-        } else {
-          console.log('Invalid players data format')
-          setPlayers([])
-        }
+        // Filter out deleted players
+        playersData = playersData.filter(player => !deletedPlayerIds.includes(player.id))
+        
+        // Apply updates
+        playersData = playersData.map(player => {
+          if (updatedPlayers[player.id]) {
+            return { ...player, ...updatedPlayers[player.id] }
+          }
+          return player
+        })
+        
+        setPlayers(playersData)
       } catch (error) {
         console.error('Error fetching players:', error)
         setPlayers([])
@@ -51,6 +59,8 @@ const Players = () => {
 
   const roles = ['All', 'Batsman', 'Bowler', 'All Rounder', 'Wicket Keeper']
   const teams = ['All', 'CSK', 'MI', 'RCB', 'KKR', 'DC', 'PBKS', 'RR', 'SRH', 'GT', 'LSG']
+  const nationalities = ['All', 'India', 'Australia', 'England', 'South Africa', 'New Zealand', 'West Indies', 'Sri Lanka', 'Afghanistan', 'Bangladesh']
+  const priceRanges = ['All', '0-2 Cr', '2-5 Cr', '5-10 Cr', '10+ Cr']
 
   const transformedPlayers = players.map((player, index) => ({
     ...player,
@@ -72,7 +82,20 @@ const Players = () => {
                          player.team.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRole = selectedRole === 'All' || player.role === selectedRole
     const matchesTeam = selectedTeam === 'All' || player.team === selectedTeam
-    return matchesSearch && matchesRole && matchesTeam
+    const matchesNationality = selectedNationality === 'All' || player.nationality === selectedNationality
+    
+    let matchesPriceRange = true
+    if (selectedPriceRange !== 'All' && player.priceCrores) {
+      const price = parseFloat(player.priceCrores)
+      switch (selectedPriceRange) {
+        case '0-2 Cr': matchesPriceRange = price <= 2; break
+        case '2-5 Cr': matchesPriceRange = price > 2 && price <= 5; break
+        case '5-10 Cr': matchesPriceRange = price > 5 && price <= 10; break
+        case '10+ Cr': matchesPriceRange = price > 10; break
+      }
+    }
+    
+    return matchesSearch && matchesRole && matchesTeam && matchesNationality && matchesPriceRange
   })
 
   const { sortedData, sortConfig, requestSort } = useSorting(filteredPlayers)
@@ -81,19 +104,38 @@ const Players = () => {
   const filterOptions = [
     {
       key: 'role',
+      label: 'Role',
       options: roles.map(role => ({ value: role, label: role }))
     },
     {
-      key: 'team', 
+      key: 'team',
+      label: 'Team', 
       options: teams.map(team => ({ value: team, label: team }))
+    },
+    {
+      key: 'nationality',
+      label: 'Nationality',
+      options: nationalities.map(nat => ({ value: nat, label: nat }))
+    },
+    {
+      key: 'priceRange',
+      label: 'Price Range',
+      options: priceRanges.map(range => ({ value: range, label: range }))
     }
   ]
 
-  const activeFilters = { role: selectedRole, team: selectedTeam }
+  const activeFilters = { 
+    role: selectedRole, 
+    team: selectedTeam, 
+    nationality: selectedNationality, 
+    priceRange: selectedPriceRange 
+  }
 
   const handleFilterChange = (key, value) => {
     if (key === 'role') setSelectedRole(value)
     if (key === 'team') setSelectedTeam(value)
+    if (key === 'nationality') setSelectedNationality(value)
+    if (key === 'priceRange') setSelectedPriceRange(value)
   }
 
   const topPerformers = transformedPlayers.filter(p => p.isTopPerformer).slice(0, 3)
@@ -131,7 +173,7 @@ const Players = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-2">🌟 Top Performers</h2>
+            <h2 className="text-3xl font-bold mb-2">Top Performers</h2>
             <p className="text-blue-100">The elite players dominating the IPL</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -173,6 +215,8 @@ const Players = () => {
             activeFilters={activeFilters}
             onFilterChange={handleFilterChange}
             placeholder="Search players, teams..."
+            showMoreFilters={showMoreFilters}
+            onToggleMoreFilters={() => setShowMoreFilters(!showMoreFilters)}
           />
           <div className="mt-4 flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -257,7 +301,7 @@ const Players = () => {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Strike Rate:</span>
-                        <span className="font-medium text-gray-900">{player.strikeRate}</span>
+                        <span className="font-medium text-gray-900">{player.strikeRate || 'N/A'}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Price:</span>
@@ -288,7 +332,7 @@ const Players = () => {
               {(!searchTerm && selectedRole === 'All' && selectedTeam === 'All') && (
                 <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
                   <p className="text-blue-700 text-sm">
-                    💡 <strong>Admin:</strong> Use the admin panel to add new players to the system.
+                    <strong>Admin:</strong> Use the admin panel to add new players to the system.
                   </p>
                 </div>
               )}
