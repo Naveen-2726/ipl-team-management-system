@@ -1,12 +1,14 @@
 package com.example.iplteammanagementsystem.demo.config;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 
 import javax.sql.DataSource;
+import java.net.URI;
 
 @Configuration
 @Profile("production")
@@ -17,20 +19,54 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         String databaseUrl = System.getenv("DATABASE_URL");
         
-        // Convert Render's postgres:// URL to jdbc:postgresql:// format
-        if (databaseUrl != null && databaseUrl.startsWith("postgres://")) {
-            databaseUrl = databaseUrl.replace("postgres://", "jdbc:postgresql://");
-        }
-        
-        // Fallback to default if no DATABASE_URL is provided
         if (databaseUrl == null) {
-            databaseUrl = "jdbc:postgresql://localhost:5432/ipl_management";
+            throw new RuntimeException("DATABASE_URL environment variable is not set");
         }
         
-        return DataSourceBuilder
-                .create()
-                .url(databaseUrl)
-                .driverClassName("org.postgresql.Driver")
-                .build();
+        System.out.println("Original DATABASE_URL: " + databaseUrl);
+        
+        try {
+            URI dbUri = new URI(databaseUrl);
+            
+            String scheme = dbUri.getScheme();
+            String host = dbUri.getHost();
+            int port = dbUri.getPort();
+            String path = dbUri.getPath();
+            String userInfo = dbUri.getUserInfo();
+            
+            // Extract username and password
+            String username = "";
+            String password = "";
+            if (userInfo != null && userInfo.contains(":")) {
+                String[] credentials = userInfo.split(":");
+                username = credentials[0];
+                password = credentials[1];
+            }
+            
+            // Build proper JDBC URL
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%d%s", host, port, path);
+            
+            System.out.println("Converted JDBC URL: " + jdbcUrl);
+            System.out.println("Username: " + username);
+            
+            // Create HikariConfig for better connection management
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(jdbcUrl);
+            config.setUsername(username);
+            config.setPassword(password);
+            config.setDriverClassName("org.postgresql.Driver");
+            
+            // Connection pool settings
+            config.setMaximumPoolSize(5);
+            config.setMinimumIdle(1);
+            config.setConnectionTimeout(20000);
+            config.setIdleTimeout(300000);
+            config.setMaxLifetime(1200000);
+            
+            return new HikariDataSource(config);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse DATABASE_URL: " + databaseUrl, e);
+        }
     }
 }
