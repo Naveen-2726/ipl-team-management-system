@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug localStorage</title>
+</head>
+<body>
+    <h1>localStorage Debug</h1>
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        // Check all localStorage data
+        const createdMatches = localStorage.getItem('createdMatches');
+        const deletedMatchIds = localStorage.getItem('deletedMatchIds');
+        const updatedMatches = localStorage.getItem('updatedMatches');
+        
+        output.innerHTML = `
+            <h2>Created Matches:</h2>
+            <pre>${createdMatches || 'None'}</pre>
+            
+            <h2>Deleted Match IDs:</h2>
+            <pre>${deletedMatchIds || 'None'}</pre>
+            
+            <h2>Updated Matches:</h2>
+            <pre>${updatedMatches || 'None'}</pre>
+            
+            <h2>All localStorage keys:</h2>
+            <pre>${Object.keys(localStorage).join(', ')}</pre>
+        `;
+    </script>
+</body>
+</html>

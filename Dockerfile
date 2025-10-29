@@ -5,13 +5,13 @@ FROM openjdk:21-jdk-slim AS build
 WORKDIR /app
 
 # Copy Maven wrapper and pom.xml first (for better layer caching)
-COPY mvnw .
-COPY mvnw.cmd .
-COPY .mvn .mvn
-COPY pom.xml .
+COPY demo/mvnw .
+COPY demo/mvnw.cmd .  
+COPY demo/.mvn .mvn
+COPY demo/pom.xml .
 
 # Copy source code
-COPY src ./src
+COPY demo/src ./src
 
 # Make Maven wrapper executable and build the project (creates target/*.jar)
 RUN chmod +x ./mvnw && ./mvnw clean package -DskipTests
