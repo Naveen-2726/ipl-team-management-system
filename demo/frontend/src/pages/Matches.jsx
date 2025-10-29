@@ -147,7 +147,22 @@ const Matches = () => {
       }
     }
     
-    setTimeout(fetchMatches, 1000)
+    fetchMatches()
+    
+    // Listen for localStorage changes and also check periodically
+    const handleStorageChange = () => {
+      fetchMatches()
+    }
+    
+    // Check for new matches every 2 seconds
+    const interval = setInterval(fetchMatches, 2000)
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const filteredMatches = matches.filter(match => {
@@ -347,6 +362,13 @@ const Matches = () => {
               ))}
             </div>
             <div className="flex items-center space-x-4">
+              <button 
+                onClick={() => window.location.reload()}
+                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Refresh Matches</span>
+              </button>
               <button className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300">
                 <Bell className="w-4 h-4" />
                 <span>Set Reminders</span>

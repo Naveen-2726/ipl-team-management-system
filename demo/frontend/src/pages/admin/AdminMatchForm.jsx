@@ -120,19 +120,21 @@ const AdminMatchForm = () => {
         result = await apiService.createMatch(matchData)
         
         // Save created match locally for demo mode
-        if (result.id) {
-          const createdMatches = JSON.parse(localStorage.getItem('createdMatches') || '[]')
-          const newMatch = {
-            ...result,
-            team1: teams.find(t => t.id.toString() === formData.team1Id)?.teamName || 'Team 1',
-            team2: teams.find(t => t.id.toString() === formData.team2Id)?.teamName || 'Team 2',
-            date: formData.matchDate.split('T')[0],
-            time: formData.matchDate.split('T')[1],
-            matchType: 'League'
-          }
-          createdMatches.push(newMatch)
-          localStorage.setItem('createdMatches', JSON.stringify(createdMatches))
+        const createdMatches = JSON.parse(localStorage.getItem('createdMatches') || '[]')
+        const newMatch = {
+          id: result.id || Date.now(),
+          team1: teams.find(t => t.id.toString() === formData.team1Id)?.teamName || 'Team 1',
+          team2: teams.find(t => t.id.toString() === formData.team2Id)?.teamName || 'Team 2',
+          date: formData.matchDate.split('T')[0],
+          time: formData.matchDate.split('T')[1],
+          venue: formData.venue,
+          status: 'Upcoming',
+          matchDate: formData.matchDate,
+          matchType: 'League'
         }
+        createdMatches.push(newMatch)
+        localStorage.setItem('createdMatches', JSON.stringify(createdMatches))
+        console.log('Match saved:', newMatch)
         
         toast.success('Match scheduled successfully!')
       }
@@ -145,6 +147,24 @@ const AdminMatchForm = () => {
       // If API fails, simulate success for demo
       if (error.response?.status === 403 || error.response?.status === 404 || error.code === 'ECONNREFUSED') {
         console.log('API unavailable, simulating match creation')
+        
+        // Save match locally when API fails
+        const createdMatches = JSON.parse(localStorage.getItem('createdMatches') || '[]')
+        const newMatch = {
+          id: Date.now(),
+          team1: teams.find(t => t.id.toString() === formData.team1Id)?.teamName || 'Team 1',
+          team2: teams.find(t => t.id.toString() === formData.team2Id)?.teamName || 'Team 2',
+          date: formData.matchDate.split('T')[0],
+          time: formData.matchDate.split('T')[1],
+          venue: formData.venue,
+          status: 'Upcoming',
+          matchDate: formData.matchDate,
+          matchType: 'League'
+        }
+        createdMatches.push(newMatch)
+        localStorage.setItem('createdMatches', JSON.stringify(createdMatches))
+        console.log('Match saved (demo mode):', newMatch)
+        
         toast.success('Match scheduled successfully! (Demo mode)')
         navigate('/admin/matches')
       } else {
