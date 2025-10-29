@@ -43,6 +43,11 @@ public class DatabaseConfig {
                 password = credentials[1];
             }
             
+            // Use default PostgreSQL port if not specified
+            if (port == -1) {
+                port = 5432;
+            }
+            
             // Build proper JDBC URL
             String jdbcUrl = String.format("jdbc:postgresql://%s:%d%s", host, port, path);
             
