@@ -10,8 +10,9 @@ import org.springframework.context.annotation.Profile;
 import javax.sql.DataSource;
 import java.net.URI;
 
-@Configuration
-@Profile("production")
+// DISABLED - Using application.properties for database configuration instead
+// @Configuration
+// @Profile("production")
 public class DatabaseConfig {
 
     @Bean
