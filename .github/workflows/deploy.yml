@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -20,12 +19,12 @@ jobs:
           java-version: '17'
 
       - name: Build with Maven
-        run: mvn clean package -DskipTests
+        run: mvn -B package -DskipTests
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: java-app
+          name: spring-boot-app
           path: target/*.jar
 
   deploy:
@@ -36,12 +35,11 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: java-app
-          path: .
+          name: spring-boot-app
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "ipl-team-management-system"
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: "*.jar"
+          app-name: YOUR_AZURE_WEBAPP_NAME
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: '*.jar'
