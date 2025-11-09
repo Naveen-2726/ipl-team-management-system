@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: '21'   # ✅ changed from 17 → 21
+          java-version: '17'
 
       - name: Build with Maven
         working-directory: ./demo
@@ -38,6 +38,11 @@ jobs:
         with:
           name: java-app
           path: .
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
