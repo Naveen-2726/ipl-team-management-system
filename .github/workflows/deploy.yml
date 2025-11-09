@@ -1,50 +1,21 @@
-name: Build and Deploy Spring Boot App to Azure
+deploy:
+  runs-on: ubuntu-latest
+  needs: build
 
-on:
-  push:
-    branches:
-      - main
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: java-app
+        path: .
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Build with Maven
-        working-directory: ./demo
-        run: mvn -B package -DskipTests
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: java-app
-          path: demo/target/*.jar
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: java-app
-
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ipl-team-management-system
-          package: '*.jar'
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ipl-team-management-system
+        package: '*.jar'
